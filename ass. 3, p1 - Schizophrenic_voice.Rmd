@@ -25,10 +25,10 @@ locpath= getwd()
 setwd(locpath)
 data_random_pitch = read.table("~/Desktop/Exp. Met. 3/Task_3/Pitch/Study1D0S101T3_f0.txt", header = TRUE)
 # read.delim (?)
-
+# all_data_df_test$Subject = gsub("c", "", all_data_df_test$Subject, all_data_df_test$Subject)
 # loading libraries
 library(pacman)
-p_load(plyr, dplyr, stringr, tidyverse, tidyr, ggplot2, pastecs, lmerTest, MuMIn, lme4, modelr, Metrics, caret, ddalpha, ggplot2, pastecs, crqa) # choose n (y/n?) in ddalpha
+p_load(plyr, dplyr, stringr, tidyverse, tidyr, ggplot2, pastecs, lmerTest, MuMIn, lme4, modelr, Metrics, caret, ddalpha, ggplot2, pastecs, crqa, lmerTest) # choose n (y/n?) in ddalpha
 ```
 
 1. In the course of this assignment you have to first select one datafile and figure out how to:
@@ -40,6 +40,7 @@ p_load(plyr, dplyr, stringr, tidyverse, tidyr, ggplot2, pastecs, lmerTest, MuMIn
 # 1
 # descriptive statistics (using the desc function from pastecs):
 desc = stat.desc(data_random_pitch) 
+
 # write down later
 
 # extract "complex" descriptors - recurrence quantification analysis:
@@ -240,6 +241,7 @@ all_data_df_test <-  data.frame(Subject, study, trial, diagnosis, PR, DET, NRLIN
 write.csv(all_data_df_test,file = "dfstudy1")
 
 # end of LOOP
+# removed from Karl's loop - not used in loop
   Subject[n] <-  substr(file, 14, 18)
   study[n] <-  substr(file, 7, 12)
   trial[n] <- sub("_", "", substr(file, 20, 21))
@@ -311,13 +313,23 @@ df = data.frame(Participant, Mean_pitch, SD_pitch)
 write.csv(df, file = "Pitchfile.csv")
 
 # LOOP
-
+install.packages("behappyR")
 ```
 
 Celine:
 looking at mean - SD - did still not make sense recurrence rate very high
 radius 3 
 piqr is also range (excluded the extremes)
+
+
+recurrence rate tells us something about the length of different snippets "sequences" that are more likely to occur in c than s for example
+l tells us somehting maybe the same?
+Study Part Trial Gender Age PIQR
+
+3. Make one model per acoustic feature and test whether you can observe significant difference due to Diagnosis. Tip: Which other fixed factors should you control for (that is, include in the model)? Which random ones?
+- Bonus points: cross-validate the model and report the betas and standard errors from all rounds to get an idea of how robust the estimates are. 
+3a. Is study a significant predictor in these models? What should you infer from this? Does study interact with diagnosis? What should you infer from this?
+
 ass. 3:
 lmer looking if diagnosis affects pitch 
 pitch ~ 1 + D +  (1 streg study)
@@ -329,20 +341,51 @@ random effect + 1 + trial streg study =expecting pitch range to change systemati
 
 ( 1 + D + trial streg P) the 2 types of participant 102 (= S102 and C102)
 When you put D in the fixed effect you are saying to the model that difference in  diagnosis wary equally across each pair of c/s, but putting D also in the random effects means that the variance in each pair and therefore the difference between c/s across pairs might vary.  (the diagnosis varies across participant (P) pairs - pairs are different)
-
-recurrence rate tells us something about the length of different snippets "sequences" that are more likely to occur in c than s for example
-l tells us somehting maybe the same?
-Study Part Trial Gender Age PIQR
-
-3. Make one model per acoustic feature and test whether you can observe significant difference due to Diagnosis. Tip: Which other fixed factors should you control for (that is, include in the model)? Which random ones?
-- Bonus points: cross-validate the model and report the betas and standard errors from all rounds to get an idea of how robust the estimates are. 
-3a. Is study a significant predictor in these models? What should you infer from this? Does study interact with diagnosis? What should you infer from this?
 ```{r}
 MAKIN
 all_data_df_test$Subject <- sub("^", "c", all_data_df_test$Subject)
+all_data_df_test$Subject <- gsub("c", all_data_df_test$Subject)
 
-model = lmer(pitch ~ 1 + D + (1|study), data = all_data_df_test) 
+PR_model = lmer(PR ~ 1 + diagnosis + (1|study), data = all_data_df_test) 
+summary(PR_model)
+DET_model = lmer(DET ~ 1 + diagnosis + (1|study), data = all_data_df_test) 
+summary(DET_model) # significant 
+NRLINE_model = lmer(NRLINE ~ 1 + diagnosis + (1|study), data = all_data_df_test) 
+summary(NRLINE_model)
+maxL_model = lmer(maxL ~ 1 + diagnosis + (1|study), data = all_data_df_test) 
+summary(maxL_model)
+L_model = lmer(L ~ 1 + diagnosis + (1|study), data = all_data_df_test) 
+summary(L_model)
+ENTR_model = lmer(ENTR ~ 1 + diagnosis + (1|study), data = all_data_df_test) 
+summary(ENTR_model) # significant
+LAM_model = lmer(LAM ~ 1 + diagnosis + (1|study), data = all_data_df_test) 
+summary(LAM_model) # significant
+TT_model = lmer(TT ~ 1 + diagnosis + (1|study), data = all_data_df_test) 
+summary(TT_model) # significant
+
 # alt + 1 = | (obelisk / vertical line)
+# just to see the mean pitch:
+model = lmer(mean ~ 1 + diagnosis + (1|study), data = all_data_df_test) 
+summary(model)
+
+#Does study have an effect on results?
+study_PR_model = lm(PR ~ 1 + diagnosis + study, data = all_data_df_test) 
+summary(study_PR_model)
+study_DET_model = lm(DET ~ 1 + diagnosis + study, data = all_data_df_test) 
+summary(study_DET_model) # significant 
+study_NRLINE_model = lm(NRLINE ~ 1 + diagnosis + study, data = all_data_df_test) 
+summary(study_NRLINE_model) # significant
+study_maxL_model = lm(maxL ~ 1 + diagnosis + study, data = all_data_df_test) 
+summary(study_maxL_model) # significant 
+study_L_model = lm(L ~ 1 + diagnosis + study, data = all_data_df_test) 
+summary(study_L_model) # significant 
+study_ENTR_model = lm(ENTR ~ 1 + diagnosis + study, data = all_data_df_test) 
+summary(study_ENTR_model) # significant
+study_LAM_model = lm(LAM ~ 1 + diagnosis + study, data = all_data_df_test) 
+summary(study_LAM_model) # significant
+study_TT_model = lm(TT ~ 1 + diagnosis + study, data = all_data_df_test) 
+summary(study_TT_model)
+"All acoutstic feature are significant across study between at least two of the studies, mostly the first two. 
 ```
 
 4. Bonus Question: Compare effect size of diagnosis across the different measures. Which measure seems most sensitive?
@@ -351,6 +394,33 @@ model = lmer(pitch ~ 1 + D + (1|study), data = all_data_df_test)
 5. Bonus question. In the Clinical Info file you have additional information about the participants. Which additional parameters (e.g. age, gender) should we control for? Report the effects.
 
 6. Write a paragraph reporting methods and results
+
+ANSWER:::::::::
+
+1) Using the package stat.desc, we extracted the standard descriptors extracted of a random file (Study1D0S101T3_f0.txt). The descriptors can be seen in the following table. 
+make table or just state mean = ...
+mean = 106.29
+std. dev. = 28.84
+range = 153.75
+median = 120.63
+iqr = 
+mean absoluted deviation = 
+coefficient of variation = 
+
+descriptors from the recurrence qualification analysis:
+see Riccardos paper for explanations of what the different values are. 
+RR (RR and PR is the same ) = 4.33 (raw amount of similarities between the ... )
+DET = 98.75
+NRLINE (the total number of lines int the recurrence plot) = 313
+MaxL = 536
+L = 39.24
+ENTR = 3.34
+LAM = 98.09
+TT = 31.37
+
+ Second you will have to turn the code into a function and loop through all the files (or even better use apply/sapply/lapply)
+- Remember to extract the relevant information from the file names (Participant, Diagnosis, Trial, Study)
+2) We made a loop where we looped through all the files in order to extract descriptors from the recurrence quantification analysis by means of the package crqa. The descriptors we obtained from the loop/recurrence quantification analysis are presented below. 
 
 [Next assignment: can we use these measures to build a tool that diagnoses people from voice only?]
 
